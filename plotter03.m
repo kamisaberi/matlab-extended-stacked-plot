@@ -89,7 +89,7 @@ for i= 1:length(channelNames)
                           'Position', [(i-1)*CHANNEL_CHECKBOX_WIDTH+marginX, cmPannel.Position(4)-30 , CHANNEL_CHECKBOX_WIDTH, 30], ...
                           'Value',1, ...
                           'Callback', @checkboxCallback);
-    checkbox.Enable = 'off';
+    % checkbox.Enable = 'off';
     checkboxes=[checkboxes , checkbox]
 end
 
