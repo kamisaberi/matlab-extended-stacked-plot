@@ -43,7 +43,7 @@ timeOffests= [0.1, 0.2, 0.5, 1.0 , 1.5, 2.0, 3.0,5.0, 10.0];
 global rects;
 rects = [];
 global scatters;
-scatters = [];
+scatters = []; 
 
 
 %% GENERATE DATA
@@ -192,7 +192,7 @@ for i= 1:PLOT_COUNT
 
     axis (ax , axisSituation);
 
-    % ax.Visible = 'off';
+    ax.Visible = 'on';
     % set(hPlot, 'Visible', 'off');
 
 end
@@ -246,13 +246,29 @@ function toggleAxisButtonPushed()
 end
 
 % Callback function for the checkbox
-% function checkboxCallback(src, event)
-%     if get(src, 'Value') == 1
-%         disp('Checkbox is checked');
-%     else
-%         disp('Checkbox is unchecked');
-%     end
-% end
+function checkboxCallback(src, event)
+    global  checkboxes;
+    global  plots;
+    global  axes;
+    for ind=1:length(checkboxes)
+        ind
+        % disp(sprintf("%s=%d", checkboxes(ind).String , checkboxes(ind).Value));
+        if checkboxes(ind).Value==1
+            % set(plots(ind), "Visible", "on");
+            plots(ind).Visible = "on";
+            axes(ind).Visible = "on";
+        else 
+            % set(plots(ind), "Visible", "off");
+            plots(ind).Visible = "off";
+            axes(ind).Visible = "off";
+        end
+    end
+    % if get(src, 'Value') == 1
+    %     disp('Checkbox is checked');
+    % else
+    %     disp('Checkbox is unchecked');
+    % end
+end
 
 % Callback function for the combo box
 function dropdownCallback(src)
