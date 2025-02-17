@@ -33,13 +33,13 @@ startTimeIndex= 1;
 global axisSituation;
 axisSituation = "on";
 global tmax;
-tmax = 20;
+tmax = 100;
 global fs;
 fs = 500;
 global timeOffestsLabels;
-timeOffestsLabels= {'0.1', '0.2', '0.5', '1.0' , '1.5', '2.0', '3.0','5.0', '10.0'};
+timeOffestsLabels= {'0.1', '0.2', '0.5', '1.0' , '1.5', '2.0', '3.0','5.0', '10.0', '20.0'};
 global timeOffests;
-timeOffests= [0.1, 0.2, 0.5, 1.0 , 1.5, 2.0, 3.0,5.0, 10.0];
+timeOffests= [0.1, 0.2, 0.5, 1.0 , 1.5, 2.0, 3.0,5.0, 10.0,20.0];
 global rects;
 rects = [];
 global scatters;
@@ -47,7 +47,11 @@ scatters = [];
 
 
 %% GENERATE DATA
+[hdr, EEG_field, EEG_lab] = readEEG("E:\DATASETS\EEG\Sample_EEG_data\FJ002193.EEG",1,tmax );
 [t, eeg_signal, artifactsIndices , channelIndices, channelNames] = generateEegSignal(tmax, fs,10,RANDOM_ARTIFACTS_PER_CHANNEL);
+t = EEG_lab.times
+eeg_signal = EEG_lab.data';
+channelNames = EEG_field.label
 % return
 
 %% CREATE UI
@@ -64,6 +68,7 @@ fig = uifigure('Name', 'Plotter', 'Position', [300, 100, 1000, MAIN_WINDOW_HEIGH
 axPanel = uipanel(fig);
 axPanel.Position = [marginX ,cmPanelHeight, fig.Position(3)-2*marginX ,fig.Position(4)-cmPanelHeight-marginY];
 axPanel.Scrollable = "off";
+
 
 %Create Command Panel at Bottom
 cmPannel = uipanel(fig, "BackgroundColor","white");
