@@ -129,16 +129,26 @@ chkDisplyArtifactScatter= uicontrol(cmPannel, 'Style', 'checkbox', ...
 
 % rectplot = @(ax,x1,x2,y1,y2) rectangle(ax,'Position',[x1 y1 (x2-x1) y2]);
 eeg_signal = eeg_signal';
+ax = uiaxes(axPanel);
+axes = [axes , ax];
+ax.Position = [0, 0 ,axPanel.Position(3) , axPanel.Position(4) ];
 for i= 1:PLOT_COUNT
-    ax = uiaxes(axPanel);
+    data= eeg_signal(i,:);
+    % mnd = min(data)
+    % mxd = max(data);
+    data2 = normalize(data, "range", [i ,i+1])
+    % plot(t(1:1000), data2(1:1000))
+    % data2 = rescale(data,-1 , 1);
+
+    hPlot = plot(ax, t, data2 , "Color",PLOT_COLOR);
     
-    axes = [axes , ax];
-    ax.Position = [0, (i-1)*axPanel.Position(4)/PLOT_COUNT ,axPanel.Position(3) , axPanel.Position(4)/PLOT_COUNT ];
-    hPlot = plot(ax, t, eeg_signal(i,:), "Color",PLOT_COLOR);
     % hPlot.ButtonDownFcn = @(h,e) disp(e.IntersectionPoint);
-    f= @(h,e) disp(e.IntersectionPoint);
-    set(hPlot, "ButtonDownFcn",f )
-    
+    % f= @(h,e) disp(e.IntersectionPoint);
+    % set(hPlot, "ButtonDownFcn",f )
+
+
+
+
     % ax.Visible = 'off';
     % set(hPlot, 'Visible', 'off');
     % set(ax, 'Visible', 'off');
@@ -184,11 +194,9 @@ for i= 1:PLOT_COUNT
 
     
 
-    hold(ax,"off")
+    % hold(ax,"off")
     plots= [plots hPlot];
     % xlim(ax ,[min(t) , max(t)/10]); 
-    xlim(ax ,[t(startTimeIndex) , t(startTimeIndex + int32(timeInterval*fs))]); 
-    ylim(ax , [min(eeg_signal(i,:)), max(eeg_signal(i,:))]); 
 
 
     set(gca, 'YLimMode', 'manual'); 
@@ -208,6 +216,14 @@ for i= 1:PLOT_COUNT
     % set(hPlot, 'Visible', 'off');
 
 end
+xlim(ax ,[t(startTimeIndex) , t(startTimeIndex + int32(timeInterval*fs))]); 
+
+% ylim(ax , [min(eeg_signal(i,:)), max(eeg_signal(i,:))]); 
+ylim(ax , [0, PLOT_COUNT]); 
+
+hold(ax,"off")
+
+
 
 %% EVENTS
 function moveRightButtonPushed()

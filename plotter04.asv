@@ -13,6 +13,12 @@ RECTANGLE_WIDTH= 0.006;
 MAIN_WINDOW_HEIGHT= 0;
 CHANNEL_CHECKBOX_WIDTH= 40; 
 
+PLOTS_GAP_BETWEEN= 0.2;
+PLOTS_HEIGHT= 1.0;
+PLOTS_TOP_PADDING = 0.5;
+PLOTS_BOTTOM_PADDING = 0.5;
+
+
 %% GLOBAL VARIABLES
 global plots;
 plots = [];
@@ -27,8 +33,15 @@ global t;
 
 global timeInterval;
 timeInterval = 1.0;
+
+global timeOffset;
+timeOffset= 0.5;
+
+
+
 global startTimeIndex;
 startTimeIndex= 1;
+
 
 
 global axisSituation;
@@ -86,15 +99,23 @@ btnLeft= uibutton(cmPannel , 'Position',[0,0,30,30], 'Text', "<<","ButtonPushedF
 btnRight = uibutton(cmPannel , 'Position',[32 ,0,30,30], 'Text', ">>","ButtonPushedFcn", @(src,event) moveRightButtonPushed());
 btnAxisToggle= uibutton(cmPannel , 'Position',[0,30+ marginY,100,20], 'Text', "axis on/off","ButtonPushedFcn", @(src,event) toggleAxisButtonPushed());
 
-comboBox = uidropdown(cmPannel , ...
+drpTimeInterval = uidropdown(cmPannel , ...
                       'Items', timeOffestsLabels, ...
                       'Position', [64, 0, 100, 30], ...
                       'Value','1.0', ...
-                      'ValueChangedFcn', @(src, event) dropdownCallback(src));
-% comboBox.Enable = 'off';
+                      'ValueChangedFcn', @(src, event) changetimeInterval(src));
+
+drpSlideTime= uidropdown(cmPannel , ...
+                      'Items', timeOffestsLabels, ...
+                      'Position', [400, 0, 100, 30], ...
+                      'Value','0.5', ...
+                      'ValueChangedFcn', @(src, event) changetimeOffset(src));
 
 
-% comboBox.Value = '1.0'
+% drpTimeInterval.Enable = 'off';
+
+
+% drpTimeInterval.Value = '1.0'
 for i= 1:length(channelNames)
     checkbox= uicontrol(cmPannel, 'Style', 'checkbox', ...
                           'String', channelNames{i}, ...
@@ -129,16 +150,25 @@ chkDisplyArtifactScatter= uicontrol(cmPannel, 'Style', 'checkbox', ...
 
 % rectplot = @(ax,x1,x2,y1,y2) rectangle(ax,'Position',[x1 y1 (x2-x1) y2]);
 eeg_signal = eeg_signal';
+ax = uiaxes(axPanel);
+axes = [axes , ax];
+ax.Position = [0, 0 ,axPanel.Position(3) , axPanel.Position(4) ];
 for i= 1:PLOT_COUNT
-    ax = uiaxes(axPanel);
+
+    data= eeg_signal(i,:);
+    data2 = normalize(data, "range", [PLOTS_BOTTOM_PADDING+(i-1)+PLOTS_GAP_BETWEEN*(i-1) ,PLOTS_BOTTOM_PADDING+(i-1)+PLOTS_HEIGHT+PLOTS_GAP_BETWEEN*(i-1)])
+    % plot(t(1:1000), data2(1:1000))
+    % data2 = rescale(data,-1 , 1);
+
+    hPlot = plot(ax, t, data2 , "Color",PLOT_COLOR);
     
-    axes = [axes , ax];
-    ax.Position = [0, (i-1)*axPanel.Position(4)/PLOT_COUNT ,axPanel.Position(3) , axPanel.Position(4)/PLOT_COUNT ];
-    hPlot = plot(ax, t, eeg_signal(i,:), "Color",PLOT_COLOR);
     % hPlot.ButtonDownFcn = @(h,e) disp(e.IntersectionPoint);
-    f= @(h,e) disp(e.IntersectionPoint);
-    set(hPlot, "ButtonDownFcn",f )
-    
+    % f= @(h,e) disp(e.IntersectionPoint);
+    % set(hPlot, "ButtonDownFcn",f )
+
+
+
+
     % ax.Visible = 'off';
     % set(hPlot, 'Visible', 'off');
     % set(ax, 'Visible', 'off');
@@ -148,18 +178,19 @@ for i= 1:PLOT_COUNT
     ylabel(ax , channelNames(i));
     hold(ax,"on")
     if size(artifactsIndices, 1) == 1 
-        sct = scatter(ax,t(artifactsIndices), eeg_signal(i, artifactsIndices),"filled");
+        sct = scatter(ax,t(artifactsIndices), data2(artifactsIndices),"filled");
         scatters =[scatters  , sct]
         % plot(ax,t(indices), eeg_signal(i, indices), "^");
     else
-        scatter(ax,t(artifactsIndices(i,:)), eeg_signal(i, artifactsIndices(i,:)),"filled");
+        scatter(ax,t(artifactsIndices(i,:)), data2(artifactsIndices(i,:)),"filled");
         % plot(ax,t(indices(i,:)), eeg_signal(i, indices(i,:)),"^");
     end
 
     if size(artifactsIndices , 1) ==1
         mn = min(eeg_signal(i, artifactsIndices));
         for index= artifactsIndices
-            r = rectangle(ax,'Position',[t(index)-RECTANGLE_WIDTH/2 mn-5 (RECTANGLE_WIDTH) 100]);
+            rw = ((RECTANGLE_WIDTH)*timeInterval);
+            r = rectangle(ax,'Position',[t(index)-RECTANGLE_WIDTH/2 mn-5 rw 100]);
             r.FaceColor = [0 0.5 0.5];
             r.EdgeColor = "none";
             r.LineWidth = 0.001;
@@ -173,7 +204,8 @@ for i= 1:PLOT_COUNT
         % integratedArtifactsIndices = artifactsIndices(:)
         mn = min(eeg_signal(i, integratedArtifactsIndices));
         for index= integratedArtifactsIndices
-            r = rectangle(ax,'Position',[t(index)-RECTANGLE_WIDTH/2 mn-5 (RECTANGLE_WIDTH) 100]);
+            rw = ((RECTANGLE_WIDTH)*timeInterval);
+            r = rectangle(ax,'Position',[t(index)-RECTANGLE_WIDTH/2 mn-5 rw 100]);
             r.FaceColor = [0 0.5 0.5];
             r.EdgeColor = "none";
             r.LineWidth = 0.001;
@@ -184,11 +216,9 @@ for i= 1:PLOT_COUNT
 
     
 
-    hold(ax,"off")
+    % hold(ax,"off")
     plots= [plots hPlot];
     % xlim(ax ,[min(t) , max(t)/10]); 
-    xlim(ax ,[t(startTimeIndex) , t(startTimeIndex + int32(timeInterval*fs))]); 
-    ylim(ax , [min(eeg_signal(i,:)), max(eeg_signal(i,:))]); 
 
 
     set(gca, 'YLimMode', 'manual'); 
@@ -208,6 +238,14 @@ for i= 1:PLOT_COUNT
     % set(hPlot, 'Visible', 'off');
 
 end
+xlim(ax ,[t(startTimeIndex) , t(startTimeIndex + int32(timeInterval*fs))]); 
+
+% ylim(ax , [min(eeg_signal(i,:)), max(eeg_signal(i,:))]); 
+ylim(ax , [0, PLOTS_BOTTOM_PADDING+PLOT_COUNT*PLOTS_HEIGHT+(PLOT_COUNT*PLOTS_GAP_BETWEEN)+PLOTS_TOP_PADDING]); 
+
+hold(ax,"off")
+
+
 
 %% EVENTS
 function moveRightButtonPushed()
@@ -218,6 +256,7 @@ function moveRightButtonPushed()
     global startTimeIndex;
     global fs;
     global timeInterval;
+    global timeOffset;
     global tmax;
     startTimeIndex = min(startTimeIndex+  int32(fs* timeInterval), (size(t,2)-int32(fs* timeInterval)) )
     for ax=axes
@@ -283,7 +322,7 @@ function checkboxCallback(src, event)
 end
 
 % Callback function for the combo box
-function dropdownCallback(src)
+function changetimeInterval(src)
     selectedOption = src.Value; % Get selected option
     global timeInterval;
     global startTimeIndex;
@@ -298,6 +337,12 @@ function dropdownCallback(src)
         xlim(ax ,[t(startTimeIndex ), t(startTimeIndex + int32(timeInterval*fs))]); 
     end
     drawnow
+end
+
+function changetimeOffset(src)
+    selectedOption = src.Value; % Get selected option
+    global timeOffset;
+    timeOffset = str2double(selectedOption);
 end
 
 
