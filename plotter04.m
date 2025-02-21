@@ -200,8 +200,9 @@ for i= 1:PLOT_COUNT
             r.EdgeColor = "none";
             r.LineWidth = 0.001;
             alpha(r,.01);
-            y = PLOTS_BOTTOM_PADDING+PLOT_COUNT*PLOTS_HEIGHT+(PLOT_COUNT*PLOTS_GAP_BETWEEN)+PLOTS_TOP_PADDING - 1
-            text(ax , t(artifactsIndices(index))-rw/2 ,y , artifactsLabels{index})
+            y = PLOTS_BOTTOM_PADDING+PLOT_COUNT*PLOTS_HEIGHT+(PLOT_COUNT*PLOTS_GAP_BETWEEN)+PLOTS_TOP_PADDING - 1;
+            t1 = text(ax , t(artifactsIndices(index))-rw/2 ,y , artifactsLabels{index});
+            t1.FontSize = 14;
             rects = [rects  , r];
         end
 
