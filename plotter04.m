@@ -193,13 +193,15 @@ for i= 1:PLOT_COUNT
 
     if size(artifactsIndices , 1) ==1
         mn = min(eeg_signal(i, artifactsIndices));
-        for index= artifactsIndices
+        for index= 1:length(artifactsIndices)
             rw = ((RECTANGLE_WIDTH)*timeInterval);
-            r = rectangle(ax,'Position',[t(index)-rw/2 mn-5 rw 100]);
+            r = rectangle(ax,'Position',[t(artifactsIndices(index))-rw/2 mn-5 rw 100]);
             r.FaceColor = "RED";
             r.EdgeColor = "none";
             r.LineWidth = 0.001;
             alpha(r,.01);
+            y = PLOTS_BOTTOM_PADDING+PLOT_COUNT*PLOTS_HEIGHT+(PLOT_COUNT*PLOTS_GAP_BETWEEN)+PLOTS_TOP_PADDING - 1
+            text(ax , t(artifactsIndices(index))-rw/2 ,y , artifactsLabels{index})
             rects = [rects  , r];
         end
 
