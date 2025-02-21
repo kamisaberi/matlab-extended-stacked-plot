@@ -11,6 +11,7 @@ PLOT_COLOR = "black";
 RANDOM_ARTIFACTS_PER_CHANNEL =0 ;
 RECTANGLE_WIDTH= 0.006;
 MAIN_WINDOW_HEIGHT= 0;
+MAIN_WINDOW_WIDTH = 0;
 CHANNEL_CHECKBOX_WIDTH= 40; 
 
 PLOTS_GAP_BETWEEN= 0.2;
@@ -32,7 +33,7 @@ global t;
 
 
 global timeInterval;
-timeInterval = 1.0;
+timeInterval = 10.0;
 
 global timeOffset;
 timeOffset= 0.5;
@@ -62,11 +63,12 @@ scatters = [];
 
 %% GENERATE DATA
 [hdr, EEG_field, EEG_lab] = readEEG("E:\DATASETS\EEG\Sample_EEG_data\FJ002193.EEG",1,tmax );
-[t, eeg_signal, artifactsIndices , channelIndices, channelNames] = generateEegSignal(tmax, fs,10,RANDOM_ARTIFACTS_PER_CHANNEL);
+% [t, eeg_signal, artifactsIndices , channelIndices, channelNames] = generateEegSignal(tmax, fs,10,RANDOM_ARTIFACTS_PER_CHANNEL);
 t = EEG_lab.times
 eeg_signal = EEG_lab.data';
 channelNames = EEG_field.label;
 artifactsLabels= hdr.orig.logs.label;
+uniqueArtifactsLabels = unique(artifactsLabels);
 artifactsTimes= hdr.orig.logs.time
 % channelIndices = hdr.orig.logs.time 
 % channelIndices = channelIndices  *500
@@ -79,10 +81,11 @@ artifactsIndices  =int32( art(art <= tmax)  *500) +1
 %Calculate Window Height
 Pix_SS = get(0,'screensize');
 MAIN_WINDOW_HEIGHT = Pix_SS(1,4)-200 ;
+MAIN_WINDOW_WIDTH= Pix_SS(1,3)-400;
 
 
 % Create Figure
-fig = uifigure('Name', 'Plotter', 'Position', [300, 100, 1000, MAIN_WINDOW_HEIGHT]);
+fig = uifigure('Name', 'Plotter', 'Position', [300, 100, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT]);
 
 %Create Plot Panel at Top
 axPanel = uipanel(fig);
@@ -102,7 +105,7 @@ btnAxisToggle= uibutton(cmPannel , 'Position',[0,30+ marginY,100,20], 'Text', "a
 drpTimeInterval = uidropdown(cmPannel , ...
                       'Items', timeOffestsLabels, ...
                       'Position', [64, 0, 100, 30], ...
-                      'Value','1.0', ...
+                      'Value','10.0', ...
                       'ValueChangedFcn', @(src, event) changetimeInterval(src));
 
 drpSlideTime= uidropdown(cmPannel , ...
@@ -116,26 +119,26 @@ drpSlideTime= uidropdown(cmPannel , ...
 
 
 % drpTimeInterval.Value = '1.0'
-for i= 1:length(channelNames)
-    checkbox= uicontrol(cmPannel, 'Style', 'checkbox', ...
-                          'String', channelNames{i}, ...
-                          'Position', [(i-1)*CHANNEL_CHECKBOX_WIDTH+marginX, cmPannel.Position(4)-30 , CHANNEL_CHECKBOX_WIDTH, 30], ...
-                          'Value',1, ...
-                          'Callback', @checkboxCallback);
-    % checkbox.Enable = 'off';
-    checkboxes=[checkboxes , checkbox]
-end
+% for i= 1:length(channelNames)
+%     checkbox= uicontrol(cmPannel, 'Style', 'checkbox', ...
+%                           'String', channelNames{i}, ...
+%                           'Position', [(i-1)*CHANNEL_CHECKBOX_WIDTH+marginX, cmPannel.Position(4)-30 , CHANNEL_CHECKBOX_WIDTH, 30], ...
+%                           'Value',1, ...
+%                           'Callback', @checkboxCallback);
+%     % checkbox.Enable = 'off';
+%     checkboxes=[checkboxes , checkbox]
+% end
 
 chkDisplyArtifactRects= uicontrol(cmPannel, 'Style', 'checkbox', ...
-                      'String', 'Disply Rects', ...
+                      'String', 'Bars', ...
                       'Position', [168 , 0 , 100, 30], ...
                       'Value',1, ...
                       'Callback', @toggleRects);
 
 chkDisplyArtifactScatter= uicontrol(cmPannel, 'Style', 'checkbox', ...
-                      'String', 'Disply Red Dots', ...
+                      'String', 'Dots', ...
                       'Position', [268 , 0 , 100, 30], ...
-                      'Value',1, ...
+                      'Value',0, ...
                       'Callback', @toggleScatter);
 
 
@@ -156,7 +159,7 @@ ax.Position = [0, 0 ,axPanel.Position(3) , axPanel.Position(4) ];
 for i= 1:PLOT_COUNT
 
     data= eeg_signal(i,:);
-    data2 = normalize(data, "range", [PLOTS_BOTTOM_PADDING+(i-1)+PLOTS_GAP_BETWEEN*(i-1) ,PLOTS_BOTTOM_PADDING+(i-1)+PLOTS_HEIGHT+PLOTS_GAP_BETWEEN*(i-1)])
+    data2 = normalize(data, "range", [PLOTS_BOTTOM_PADDING+(i-1)+PLOTS_GAP_BETWEEN*(i-1) ,PLOTS_BOTTOM_PADDING+(i-1)+PLOTS_HEIGHT+PLOTS_GAP_BETWEEN*(i-1)]);
     % plot(t(1:1000), data2(1:1000))
     % data2 = rescale(data,-1 , 1);
 
@@ -179,10 +182,12 @@ for i= 1:PLOT_COUNT
     hold(ax,"on")
     if size(artifactsIndices, 1) == 1 
         sct = scatter(ax,t(artifactsIndices), data2(artifactsIndices),"filled");
+        set(sct, 'Visible', 'off');
         scatters =[scatters  , sct]
         % plot(ax,t(indices), eeg_signal(i, indices), "^");
     else
-        scatter(ax,t(artifactsIndices(i,:)), data2(artifactsIndices(i,:)),"filled");
+        sct = scatter(ax,t(artifactsIndices(i,:)), data2(artifactsIndices(i,:)),"filled");
+        set(sct, 'Visible', 'off');
         % plot(ax,t(indices(i,:)), eeg_signal(i, indices(i,:)),"^");
     end
 
@@ -190,11 +195,11 @@ for i= 1:PLOT_COUNT
         mn = min(eeg_signal(i, artifactsIndices));
         for index= artifactsIndices
             rw = ((RECTANGLE_WIDTH)*timeInterval);
-            r = rectangle(ax,'Position',[t(index)-RECTANGLE_WIDTH/2 mn-5 rw 100]);
-            r.FaceColor = [0 0.5 0.5];
+            r = rectangle(ax,'Position',[t(index)-rw/2 mn-5 rw 100]);
+            r.FaceColor = "RED";
             r.EdgeColor = "none";
             r.LineWidth = 0.001;
-            alpha(r,.3);
+            alpha(r,.01);
             rects = [rects  , r];
         end
 
@@ -205,11 +210,11 @@ for i= 1:PLOT_COUNT
         mn = min(eeg_signal(i, integratedArtifactsIndices));
         for index= integratedArtifactsIndices
             rw = ((RECTANGLE_WIDTH)*timeInterval);
-            r = rectangle(ax,'Position',[t(index)-RECTANGLE_WIDTH/2 mn-5 rw 100]);
+            r = rectangle(ax,'Position',[t(index)-rw/2 mn-5 rw 100]);
             r.FaceColor = [0 0.5 0.5];
             r.EdgeColor = "none";
             r.LineWidth = 0.001;
-            alpha(r,.3);
+            alpha(r,.01);
             rects = [rects  , r];
         end
     end
@@ -358,7 +363,7 @@ function toggleRects(src, event)
     global rects
     if get(src, 'Value') == 1
         for rect = rects 
-            alpha(rect , 0.3)
+            alpha(rect , 0.01)
         end
     else
         for rect = rects 
